@@ -1,0 +1,9 @@
+[project]
+name = "wanikani-next-review"
+version = "1.0.0"
+description = "Check when the next WaniKani review will be available for your current level"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "requests>=2.31.0",
+]
