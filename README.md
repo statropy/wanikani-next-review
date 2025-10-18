@@ -1,6 +1,10 @@
 # WaniKani Next Review Checker
 
-A command-line tool that checks the WaniKani API to determine when your next review will be available for unlocked items at your current level.
+Tools for checking the WaniKani API to determine when your next review will be available for unlocked items at your current level.
+
+This project includes:
+- **Command-line tool** - Check reviews from the terminal
+- **macOS Menu Bar Widget** - Display next review time in your menu bar
 
 ## Features
 
@@ -42,6 +46,8 @@ To make this permanent, add the export line to your shell configuration file (`~
 
 ## Usage
 
+### Command-Line Tool
+
 Run the script:
 
 ```bash
@@ -54,7 +60,7 @@ Or if using a traditional Python environment:
 python main.py
 ```
 
-### Example Output
+#### Example Output
 
 ```
 Fetching user level...
@@ -69,6 +75,33 @@ Next review available:
   In:    5h 23m 14s
   Items: 12
 ```
+
+### macOS Menu Bar Widget
+
+Run the menu bar widget:
+
+```bash
+uv run menubar_widget.py
+```
+
+Or if using a traditional Python environment:
+
+```bash
+python menubar_widget.py
+```
+
+The widget will:
+- Display the next review time (in local time) and item count in your menu bar
+- Show as: `07:30 PM (12)` format
+- Automatically refresh every hour
+- Allow manual refresh via the dropdown menu
+- Click the menu bar icon to see:
+  - Full date and time of next review
+  - Time remaining until next review
+  - Manual refresh option
+  - Last update time
+
+**Note:** To run the widget at login, you can add it to your Login Items in System Preferences.
 
 ## How It Works
 
