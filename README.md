@@ -51,13 +51,13 @@ To make this permanent, add the export line to your shell configuration file (`~
 Run the script:
 
 ```bash
-uv run main.py
+uv run cli.py
 ```
 
 Or if using a traditional Python environment:
 
 ```bash
-python main.py
+python cli.py
 ```
 
 #### Example Output
@@ -81,13 +81,13 @@ Next review available:
 Run the menu bar widget:
 
 ```bash
-uv run menubar_widget.py
+uv run macos_widget.py
 ```
 
 Or if using a traditional Python environment:
 
 ```bash
-python menubar_widget.py
+python macos_widget.py
 ```
 
 The widget will:

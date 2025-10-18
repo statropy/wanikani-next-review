@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-WaniKani Next Review Checker
+WaniKani Next Review Checker - CLI
 
-This script checks the WaniKani API to determine when the next review
+Command-line tool that checks the WaniKani API to determine when the next review
 will be available for unlocked items at the current level.
 """
 

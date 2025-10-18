@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-WaniKani Menu Bar Widget
+WaniKani macOS Menu Bar Widget
 
 A macOS menu bar widget that displays the next WaniKani review time
-and number of items available.
+and number of items available for your current level.
 """
 
 import os
