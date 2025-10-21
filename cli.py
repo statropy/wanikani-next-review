@@ -11,7 +11,7 @@ import sys
 import requests
 from datetime import datetime
 
-from wanikani_api import WaniKaniClient, find_next_review
+from wanikani_api import WaniKaniClient, find_next_review, next_review_day
 
 
 def main():
@@ -32,40 +32,32 @@ def main():
         client = WaniKaniClient(api_token)
 
         # Get current user level
-        print("Fetching user level...")
-        level = client.get_user_level()
-        print(f"Current level: {level}")
+        username, level = client.get_user_level()
 
         # Get unlocked assignments for current level
-        print(f"\nFetching unlocked assignments for level {level}...")
         assignments = client.get_unlocked_assignments(level)
-        print(f"Found {len(assignments)} unlocked assignments")
 
         # Find next review
         result = find_next_review(assignments)
 
         if result:
             next_date, count = result
-            # Convert UTC to local timezone
-            local_date = next_date.astimezone()
-            # Calculate time until next review
-            now = datetime.now(next_date.tzinfo)
-            time_until = next_date - now
 
+            print(
+                f"鰐蟹 {username} level {level} next review {count} of {len(assignments)} unlocked items:"
+            )
             # Format the time difference
+            time_until = next_date - datetime.now(next_date.tzinfo)
             total_seconds = int(time_until.total_seconds())
-            if total_seconds < 0:
-                time_str = "Available now"
+            if total_seconds <= 0:
+                print("  Available now")
             else:
                 hours, remainder = divmod(total_seconds, 3600)
                 minutes, seconds = divmod(remainder, 60)
                 time_str = f"{hours}h {minutes}m {seconds}s"
-
-            print(f"\nNext review available:")
-            print(f"  UTC:   {next_date.strftime('%Y-%m-%d %H:%M:%S %Z')}")
-            print(f"  Local: {local_date.strftime('%Y-%m-%d %H:%M:%S %Z')}")
-            print(f"  In:    {time_str}")
-            print(f"  Items: {count}")
+                print(
+                    f"  {next_review_day(next_date)} {next_date.strftime('%I:%M %p').lstrip('0')} ({time_str})"
+                )
         else:
             print("\nNo reviews scheduled for the current level")
 
