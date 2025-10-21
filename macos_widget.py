@@ -7,13 +7,12 @@ and number of items available for your current level.
 """
 
 import os
-import sys
 import rumps
 import requests
 from datetime import datetime
 import threading
 
-from wanikani_api import WaniKaniClient, find_next_review
+from wanikani_api import WaniKaniClient, find_next_review, next_review_day
 
 
 class WaniKaniMenuBarApp(rumps.App):
@@ -23,7 +22,6 @@ class WaniKaniMenuBarApp(rumps.App):
         super(WaniKaniMenuBarApp, self).__init__(
             "WK",
             title="WaniKani",
-            quit_button=rumps.MenuItem("Quit", key="q"),
         )
 
         # Get API token from environment
@@ -61,6 +59,11 @@ class WaniKaniMenuBarApp(rumps.App):
         # Initial update
         self.update_data(None)
 
+    def seconds_until(self, target_time: datetime) -> int:
+        now = datetime.now(target_time.tzinfo)
+        time_until = target_time - now
+        return int(time_until.total_seconds())
+
     def format_time_until(self, target_time: datetime) -> str:
         """
         Format the time remaining until target_time.
@@ -71,10 +74,7 @@ class WaniKaniMenuBarApp(rumps.App):
         Returns:
             Formatted string like "5h 23m" or "Available now"
         """
-        now = datetime.now(target_time.tzinfo)
-        time_until = target_time - now
-
-        total_seconds = int(time_until.total_seconds())
+        total_seconds = self.seconds_until(target_time)
         if total_seconds < 0:
             return "Available now"
 
@@ -83,8 +83,10 @@ class WaniKaniMenuBarApp(rumps.App):
 
         if hours > 0:
             return f"{hours}h {minutes}m"
-        else:
+        elif minutes > 0:
             return f"{minutes}m"
+        else:
+            return f"{total_seconds}s"
 
     def update_data(self, _):
         """Update the review data from WaniKani API."""
@@ -97,7 +99,7 @@ class WaniKaniMenuBarApp(rumps.App):
         """Fetch data from WaniKani API (runs in background thread)."""
         try:
             # Get user level
-            level = self.client.get_user_level()
+            _, level = self.client.get_user_level()
 
             # Get unlocked assignments
             assignments = self.client.get_unlocked_assignments(level)
@@ -107,24 +109,27 @@ class WaniKaniMenuBarApp(rumps.App):
 
             if result:
                 self.next_review_time, self.item_count = result
-                # Convert to local time
-                local_time = self.next_review_time.astimezone()
 
                 # Update title with time and count
-                time_str = local_time.strftime("%I:%M %p")
-                self.title = f"{time_str} ({self.item_count})"
+                time_str = self.next_review_time.strftime("%I:%M %p").lstrip("0")
+                if self.seconds_until(self.next_review_time) <= 0:
+                    self.title = f"鰐蟹 Available Now ({self.item_count})"
+                else:
+                    self.title = f"鰐蟹 {next_review_day(self.next_review_time)} {time_str} ({self.item_count})"
 
                 # Update status menu item
                 time_until = self.format_time_until(self.next_review_time)
-                date_str = local_time.strftime("%a, %b %d")
-                self.status_item.title = f"Next: {date_str} at {time_str} - {time_until}"
+                date_str = self.next_review_time.strftime("%a, %b %d")
+                self.status_item.title = (
+                    f"Next: {date_str} at {time_str} - {time_until}"
+                )
             else:
                 self.title = "WK: No reviews"
                 self.status_item.title = "No reviews scheduled"
 
             # Update last update time
             self.last_update = datetime.now()
-            update_str = self.last_update.strftime("%I:%M %p")
+            update_str = self.last_update.strftime("%I:%M %p").lstrip("0")
             self.last_update_item.title = f"Last updated: {update_str}"
 
         except requests.RequestException as e:

@@ -7,7 +7,7 @@ Used by both the CLI and menu bar widget applications.
 """
 
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta, date
 from typing import Optional, Dict, List, Tuple
 from collections import defaultdict
 
@@ -30,12 +30,12 @@ class WaniKaniClient:
             "Wanikani-Revision": "20170710",
         }
 
-    def get_user_level(self) -> int:
+    def get_user_level(self) -> Tuple[str, int]:
         """
-        Get the current user level.
+        Get the current user name and level.
 
         Returns:
-            The user's current level as an integer
+            The user's name and current level as a tuple
 
         Raises:
             requests.RequestException: If the API request fails
@@ -43,7 +43,7 @@ class WaniKaniClient:
         response = requests.get(f"{self.BASE_URL}/user", headers=self.headers)
         response.raise_for_status()
         data = response.json()
-        return data["data"]["level"]
+        return (data["data"]["username"], data["data"]["level"])
 
     def get_unlocked_assignments(self, level: int) -> List[Dict]:
         """
@@ -71,6 +71,19 @@ class WaniKaniClient:
         response.raise_for_status()
         data = response.json()
         return data["data"]
+
+
+def next_review_day(next_review: datetime) -> str:
+    today = date.today()
+    if next_review.date() == today:
+        return "今日"
+    elif next_review.date() == today + timedelta(days=1):
+        return "明日"
+    elif next_review.date() == today + timedelta(days=2):
+        return "明後日"
+
+    # shortened day of the week
+    return next_review.strftime("%a")
 
 
 def find_next_review(assignments: List[Dict]) -> Optional[Tuple[datetime, int]]:
@@ -101,5 +114,6 @@ def find_next_review(assignments: List[Dict]) -> Optional[Tuple[datetime, int]]:
     earliest_date_str = min(date_counts.keys())
     earliest_date = datetime.fromisoformat(earliest_date_str.replace("Z", "+00:00"))
     count = date_counts[earliest_date_str]
+    local_date = earliest_date.astimezone()
 
-    return earliest_date, count
+    return local_date, count
