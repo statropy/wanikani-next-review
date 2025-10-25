@@ -1,0 +1,81 @@
+name: Build and Release macOS App
+
+on:
+  push:
+    tags:
+      - 'v*'  # Triggers on version tags like v1.0.0, v1.2.3, etc.
+  workflow_dispatch:  # Allows manual trigger from GitHub Actions tab
+
+permissions:
+  contents: write  # Required for creating releases
+
+jobs:
+  build-and-release:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Install Python and dependencies
+        run: |
+          uv python install 3.14
+          uv sync
+
+      - name: Build macOS app with PyInstaller
+        run: |
+          uv run pyinstaller WaniKaniNext.spec
+
+      - name: Create DMG (optional)
+        run: |
+          # Create a simple DMG from the app bundle
+          mkdir -p dist/dmg
+          cp -r dist/WaniKaniNext.app dist/dmg/
+          hdiutil create -volname "WaniKaniNext" -srcfolder dist/dmg -ov -format UDZO dist/WaniKaniNext.dmg
+
+      - name: Create ZIP archive
+        run: |
+          cd dist
+          zip -r WaniKaniNext-macOS.zip WaniKaniNext.app
+          cd ..
+
+      - name: Get version from tag
+        id: get_version
+        run: |
+          if [ "${{ github.ref_type }}" == "tag" ]; then
+            echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          else
+            echo "version=dev-$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.get_version.outputs.version }}
+          name: Release ${{ steps.get_version.outputs.version }}
+          draft: false
+          prerelease: false
+          files: |
+            dist/WaniKaniNext-macOS.zip
+            dist/WaniKaniNext.dmg
+          body: |
+            ## WaniKani Next Review - macOS App
+
+            ### Installation
+
+            NOTE: The release application is NOT SIGNED, so it will not run by default on macos.
+
+            1. Download `WaniKaniNext-macOS.zip` or `WaniKaniNext.dmg`
+            2. Extract/mount the file
+            3. Drag `WaniKaniNext.app` to your Applications folder
+            4. Run the app from Applications (you may need to allow it in System Preferences > Privacy & Security) or
+            `xattr -rd com.apple.quarantine /path/to/your/app.app`
+
+
+            ### Changes
+            See commit history for details.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
