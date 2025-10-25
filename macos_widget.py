@@ -28,9 +28,6 @@ class WaniKaniMenuBarApp(rumps.App):
             title="WaniKani",
         )
 
-        # if self.load_api_token():
-        #     self.delete_api_token()
-
         self.next_review_time = None
         self.item_count = 0
         self.last_update = None
@@ -53,14 +50,10 @@ class WaniKaniMenuBarApp(rumps.App):
             self.update_api_token_item,
         ]
 
-        # TODO: Get from Keychain or Dialog
-        # Get API token from environment
         self.load_client()
 
     def load_client(self):
         self.api_token = self.load_api_token()
-        if not self.api_token:
-            self.api_token = os.environ.get("WANIKANINEXT_API_TOKEN")
         if not self.api_token:
             self.title = "WK: No Token"
             return
