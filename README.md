@@ -34,7 +34,9 @@ This project includes:
    pip install -r requirements.txt
    ```
 
-## Configuration
+## Usage
+
+### Command-Line Tool
 
 Set your WaniKani API token as an environment variable:
 
@@ -43,10 +45,6 @@ export WANIKANI_API_TOKEN='your_token_here'
 ```
 
 To make this permanent, add the export line to your shell configuration file (`~/.bashrc`, `~/.zshrc`, etc.).
-
-## Usage
-
-### Command-Line Tool
 
 Run the script:
 
@@ -63,20 +61,13 @@ python cli.py
 #### Example Output
 
 ```
-Fetching user level...
-Current level: 15
-
-Fetching unlocked assignments for level 15...
-Found 23 unlocked assignments
-
-Next review available:
-  UTC:   2025-10-17 14:30:00 UTC
-  Local: 2025-10-17 07:30:00 PDT
-  In:    5h 23m 14s
-  Items: 12
+鰐蟹 user_name level 10 next review 1 of 17 unlocked items:
+  今日 4:00 PM (2h 14m 39s)
 ```
 
 ### macOS Menu Bar Widget
+
+The macos Keyring is used to store the API Token.
 
 Run the menu bar widget:
 
@@ -90,9 +81,15 @@ Or if using a traditional Python environment:
 python macos_widget.py
 ```
 
+Or create a macos application:
+
+```bash
+uv run pyinstaller WaniKaniNext.spec
+```
+
 The widget will:
 - Display the next review time (in local time) and item count in your menu bar
-- Show as: `07:30 PM (12)` format
+- Show as: `鰐蟹 今日 7:30 PM (12)` format
 - Automatically refresh every hour
 - Allow manual refresh via the dropdown menu
 - Click the menu bar icon to see:
@@ -100,6 +97,7 @@ The widget will:
   - Time remaining until next review
   - Manual refresh option
   - Last update time
+  - Update API Token
 
 **Note:** To run the widget at login, you can add it to your Login Items in System Preferences.
 

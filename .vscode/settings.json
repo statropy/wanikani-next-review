@@ -1,0 +1,15 @@
+{
+    "VsCodeTaskButtons.showCounter": false,
+    "VsCodeTaskButtons.tasks": [
+        {
+            "label": "$(gather) macos app",
+            "tooltip": "Build macos app",
+            "task": "Make macos application",
+        },
+        {
+            "label": "$(terminal) CLI",
+            "tooltip": "Run CLI",
+            "task": "Run CLI"
+        }
+    ]
+}
