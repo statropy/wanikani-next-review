@@ -11,6 +11,7 @@ import rumps
 import requests
 from datetime import datetime
 import threading
+import keyring
 
 from wanikani_api import WaniKaniClient, find_next_review, next_review_day
 
@@ -18,31 +19,30 @@ from wanikani_api import WaniKaniClient, find_next_review, next_review_day
 class WaniKaniMenuBarApp(rumps.App):
     """Menu bar application for WaniKani review tracking."""
 
+    APP_NAME = "WaniKaniNext"
+    TOKEN_NAME = "api_token"
+
     def __init__(self):
         super(WaniKaniMenuBarApp, self).__init__(
             "WK",
             title="WaniKani",
         )
 
-        # Get API token from environment
-        self.api_token = os.environ.get("WANIKANI_API_TOKEN")
-        if not self.api_token:
-            self.title = "WK: No Token"
-            self.menu = [
-                rumps.MenuItem("Error: WANIKANI_API_TOKEN not set", callback=None),
-                rumps.separator,
-            ]
-            return
+        # if self.load_api_token():
+        #     self.delete_api_token()
 
-        self.client = WaniKaniClient(self.api_token)
         self.next_review_time = None
         self.item_count = 0
         self.last_update = None
+        self.timer = None
 
         # Create menu items
         self.status_item = rumps.MenuItem("Loading...", callback=None)
-        self.refresh_item = rumps.MenuItem("Refresh Now", callback=self.refresh_now)
+        self.refresh_item = rumps.MenuItem("Refresh Now", callback=None)
         self.last_update_item = rumps.MenuItem("Last updated: Never", callback=None)
+        self.update_api_token_item = rumps.MenuItem(
+            "Enter API Token", callback=self.update_api_token
+        )
 
         self.menu = [
             self.status_item,
@@ -50,14 +50,74 @@ class WaniKaniMenuBarApp(rumps.App):
             self.refresh_item,
             self.last_update_item,
             rumps.separator,
+            self.update_api_token_item,
         ]
 
+        # TODO: Get from Keychain or Dialog
+        # Get API token from environment
+        self.load_client()
+
+    def load_client(self):
+        self.api_token = self.load_api_token()
+        if not self.api_token:
+            self.api_token = os.environ.get("WANIKANINEXT_API_TOKEN")
+        if not self.api_token:
+            self.title = "WK: No Token"
+            return
+
+        self.client = WaniKaniClient(self.api_token)
+
         # Start hourly timer (3600 seconds)
+        if self.timer:
+            self.timer.stop()
         self.timer = rumps.Timer(self.update_data, 3600)
         self.timer.start()
 
         # Initial update
         self.update_data(None)
+
+    def delete_api_token(self):
+        keyring.delete_password(self.APP_NAME, self.TOKEN_NAME)
+        self.api_key = None
+
+    def load_api_token(self):
+        """Load API token from macOS Keychain"""
+        try:
+            return keyring.get_password(self.APP_NAME, self.TOKEN_NAME)
+        except:
+            return None
+
+    def save_api_token(self, token):
+        """Save API token to macOS Keychain"""
+        keyring.set_password(self.APP_NAME, self.TOKEN_NAME, token)
+        self.api_token = token
+
+    def prompt_for_api_token(self):
+        window = rumps.Window(
+            title="Enter API Token",
+            message="Please enter your API token:",
+            default_text="",
+            ok="Save",
+            cancel="Cancel",
+            dimensions=(300, 20),
+        )
+
+        response = window.run()
+
+        if response.clicked:
+            api_token = response.text.strip()
+            if api_token:
+                # self.save_api_token(api_token)
+                rumps.notification(
+                    title="API Token Saved",
+                    subtitle="",
+                    message="Your API token has been saved securely.",
+                )
+                self.save_api_token(api_token)
+                self.load_client()
+            else:
+                rumps.alert("Error", "API token cannot be empty")
+                self.prompt_for_api_token()
 
     def seconds_until(self, target_time: datetime) -> int:
         now = datetime.now(target_time.tzinfo)
@@ -131,6 +191,8 @@ class WaniKaniMenuBarApp(rumps.App):
             self.last_update = datetime.now()
             update_str = self.last_update.strftime("%I:%M %p").lstrip("0")
             self.last_update_item.title = f"Last updated: {update_str}"
+            self.update_api_token_item.title = "Update API Token"
+            self.refresh_item.set_callback(self.refresh_now)
 
         except requests.RequestException as e:
             self.title = "WK: Error"
@@ -139,11 +201,14 @@ class WaniKaniMenuBarApp(rumps.App):
             self.title = "WK: Error"
             self.status_item.title = f"Error: {str(e)[:50]}"
 
-    @rumps.clicked("Refresh Now")
     def refresh_now(self, _):
         """Manual refresh triggered by user."""
         self.title = "WK: Refreshing..."
         self.update_data(None)
+
+    def update_api_token(self, _):
+        """Manual refresh triggered by user."""
+        self.prompt_for_api_token()
 
 
 def main():
