@@ -65,10 +65,15 @@ jobs:
             ## WaniKani Next Review - macOS App
 
             ### Installation
+
+            NOTE: The release application is NOT SIGNED, so it will not run by default on macos.
+
             1. Download `WaniKaniNext-macOS.zip` or `WaniKaniNext.dmg`
             2. Extract/mount the file
             3. Drag `WaniKaniNext.app` to your Applications folder
-            4. Run the app from Applications (you may need to allow it in System Preferences > Privacy & Security)
+            4. Run the app from Applications (you may need to allow it in System Preferences > Privacy & Security) or
+            `xattr -rd com.apple.quarantine /path/to/your/app.app`
+
 
             ### Changes
             See commit history for details.
